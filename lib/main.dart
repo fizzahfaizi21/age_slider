@@ -14,8 +14,10 @@ class AgeCounter with ChangeNotifier {
   int value = 0;
 
   void increment() {
-    value += 1;
-    notifyListeners();
+    if (value < 99) {
+      value += 1;
+      notifyListeners();
+    }
   }
 
   void decrement() {
@@ -26,7 +28,7 @@ class AgeCounter with ChangeNotifier {
   }
 
   void setValue(int newValue) {
-    if (newValue >= 0) {
+    if (newValue >= 0 && newValue <= 99) {
       value = newValue;
       notifyListeners();
     }
@@ -78,6 +80,48 @@ class AgeCounter with ChangeNotifier {
     } else {
       return Colors.red[100]!; // Nineties+
     }
+  }
+
+  // Get progress bar colors based on age range (0-33, 34-67, 68-99)
+  Color getProgressColor() {
+    if (value >= 0 && value <= 33) {
+      return Colors.green;
+    } else if (value >= 34 && value <= 67) {
+      return Colors.yellow;
+    } else {
+      return Colors.red;
+    }
+  }
+
+  // Get progress percentage for the overall life progress bar
+  double getProgressPercentage() {
+    return value / 99;
+  }
+
+  // Get progress for each of the three life segments
+  double getSegment1Progress() {
+    if (value <= 33) {
+      return value / 33;
+    }
+    return 1.0;
+  }
+
+  double getSegment2Progress() {
+    if (value <= 33) {
+      return 0.0;
+    } else if (value <= 67) {
+      return (value - 33) / 34;
+    }
+    return 1.0;
+  }
+
+  double getSegment3Progress() {
+    if (value <= 67) {
+      return 0.0;
+    } else {
+      return (value - 67) / 32;
+    }
+    return 0.0;
   }
 }
 
@@ -153,7 +197,128 @@ class MyHomePage extends StatelessWidget {
                       textAlign: TextAlign.center,
                     ),
                   ),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 30),
+
+                  // Life Progress Section
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 10,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                    child: Column(
+                      children: [
+                        const Text(
+                          'Life Progress',
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 20),
+
+                        // Overall progress bar
+                        LinearProgressIndicator(
+                          value: ageCounter.getProgressPercentage(),
+                          minHeight: 15,
+                          backgroundColor: Colors.grey[300],
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                              ageCounter.getProgressColor()),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text('0'),
+                              Text('${ageCounter.value}/99'),
+                              const Text('99'),
+                            ],
+                          ),
+                        ),
+
+                        const SizedBox(height: 20),
+                        const Text(
+                          'Progress by Life Stages',
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 10),
+
+                        // First segment (0-33): Green
+                        Row(
+                          children: [
+                            const SizedBox(
+                                width: 100, child: Text('Early (0-33):')),
+                            Expanded(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: LinearProgressIndicator(
+                                  value: ageCounter.getSegment1Progress(),
+                                  minHeight: 15,
+                                  backgroundColor: Colors.grey[300],
+                                  valueColor:
+                                      const AlwaysStoppedAnimation<Color>(
+                                          Colors.green),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+
+                        // Second segment (34-67): Yellow
+                        Row(
+                          children: [
+                            const SizedBox(
+                                width: 100, child: Text('Middle (34-67):')),
+                            Expanded(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: LinearProgressIndicator(
+                                  value: ageCounter.getSegment2Progress(),
+                                  minHeight: 15,
+                                  backgroundColor: Colors.grey[300],
+                                  valueColor:
+                                      const AlwaysStoppedAnimation<Color>(
+                                          Colors.yellow),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+
+                        // Third segment (68-99): Red
+                        Row(
+                          children: [
+                            const SizedBox(
+                                width: 100, child: Text('Later (68-99):')),
+                            Expanded(
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: LinearProgressIndicator(
+                                  value: ageCounter.getSegment3Progress(),
+                                  minHeight: 15,
+                                  backgroundColor: Colors.grey[300],
+                                  valueColor:
+                                      const AlwaysStoppedAnimation<Color>(
+                                          Colors.red),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 30),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -169,7 +334,9 @@ class MyHomePage extends StatelessWidget {
                       ),
                       const SizedBox(width: 20),
                       ElevatedButton(
-                        onPressed: () => ageCounter.increment(),
+                        onPressed: ageCounter.value < 99
+                            ? () => ageCounter.increment()
+                            : null,
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 20, vertical: 12),
@@ -178,7 +345,7 @@ class MyHomePage extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 20),
                   Text(
                     'Drag to set your age:',
                     style: TextStyle(
@@ -186,8 +353,8 @@ class MyHomePage extends StatelessWidget {
                   ),
                   Slider(
                     min: 0,
-                    max: 100,
-                    divisions: 100,
+                    max: 99,
+                    divisions: 99,
                     value: ageCounter.value.toDouble(),
                     label: ageCounter.value.toString(),
                     onChanged: (double value) {
@@ -200,8 +367,9 @@ class MyHomePage extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         const Text('0'),
-                        const Text('50'),
-                        const Text('100'),
+                        const Text('33'),
+                        const Text('67'),
+                        const Text('99'),
                       ],
                     ),
                   ),
